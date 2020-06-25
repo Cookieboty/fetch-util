@@ -2,23 +2,23 @@
  * @Author: Cookie
  * @Date: 2020-06-22 16:23:02
  * @LastEditors: Cookie
- * @LastEditTime: 2020-06-25 21:44:24
+ * @LastEditTime: 2020-06-26 00:32:14
  * @FilePath: /fetch-uitl/src/index.js
  * @Description:
  */
 
 import Fetch from './util/fetch'
 
-const fetch = new Fetch({ requestType: "FormData" });
+const fetch = new Fetch({ requestType: "FormData", cacheType: 'local' });
 
-fetch.post({
+fetch.get({
     url: 'https://api.github.com/users/octocat',
-    params: {
-        test: 1
-    }
+    // params: {
+    //     test: 1
+    // }
 }).then(data => {
-    console.log(data)
+    console.log('data====>', data)
 }).catch(err => {
-    console.log(err)
+    console.log('err====>', err)
 })
 

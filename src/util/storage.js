@@ -2,7 +2,7 @@
  * @Author: Cookie
  * @Date: 2020-06-22 19:26:03
  * @LastEditors: Cookie
- * @LastEditTime: 2020-06-22 19:50:38
+ * @LastEditTime: 2020-06-25 22:48:57
  * @FilePath: /fetch-uitl/src/util/stroage.js
  * @Description:
  */
@@ -10,7 +10,7 @@
 class Storage {
 
     constructor(props) { // 根据类型跟缓存时间，初始化缓存方法
-        const { type, time } = props
+        const { type, time = 5000 } = props
         this.type = type
         this.time = time
         this.storageType = {

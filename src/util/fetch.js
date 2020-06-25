@@ -2,15 +2,16 @@
  * @Author: Cookie
  * @Date: 2020-06-22 17:09:21
  * @LastEditors: Cookie
- * @LastEditTime: 2020-06-25 21:52:31
+ * @LastEditTime: 2020-06-26 00:32:42
  * @FilePath: /fetch-uitl/src/fetch.js
  * @Description: 
  */
 import qs from 'qs'
+import Storage from './storage'
 
 class Fetch {
     constructor(config = {}) {
-        
+
         const {
             cache = 'no-cache', // * default, no-cache, reload, force-cache, only-if-cached
             credentials = 'same-origin', // include, same-origin, *omit
@@ -21,6 +22,7 @@ class Fetch {
             timeOut = 3000, // 超时时间
             BASE_URL = '',
             requestType = 'JSON',
+            cacheType = ''
         } = config
 
         this.FetchConfig = {
@@ -31,12 +33,14 @@ class Fetch {
             redirect,
             referrer,
         }
-        
+
         this.config = {
             timeOut,
             BASE_URL,
             requestType,
         }
+
+        this.cacheStorage = cacheType ? new Storage({ type: cacheType }) : ''
 
         this.dataOperation = {
             JSON: {
@@ -64,54 +68,70 @@ class Fetch {
         }
     }
 
-    send({ url, params, method = "GET", headers }) {
+    send({ url, FetchConfig }) {
         // 发送 ajax 请求
-        const { BASE_URL } = this.config
-        const ajax = new Promise((resolve) => {
-            fetch(BASE_URL ? `${BASE_URL}/${url}` : url, {
-                ...this.config,
-                body: params,
-                headers,
-                method,
-            }).then((response) => {
-                return response.json()
+        const { BASE_URL, timeOut } = this.config
+        const ajax = new Promise((resolve, reject) => {
+            fetch(BASE_URL ? `${BASE_URL}/${url}` : url, FetchConfig).then((response) => {
+                if (response.ok) {
+                    return response.json()
+                } else {
+                    reject({
+                        status: response.status,
+                        msg: response.statusText
+                    })
+                }
             }).then((data) => {
                 resolve(data)
             })
         })
         // 设置超时时间
         const time = new Promise((reject) => {
-            console.log(this.config.timeOut)
             setTimeout(() => {
                 reject('time out')
-            }, this.config.timeOut);
+            }, timeOut);
         })
+
         return Promise.race([ajax, time])
     }
 
-    // 封装请求
-    get({ url, query = '', params = {}, headers }) {
+    preSend({ url, params, headers, method }) {
         const { requestType } = this.config
-        return this.send({
-            url: query ? `${url}?${qs.stringify(query)}` : url,
-            params: this.dataOperation[requestType].formatting(params),
+        const FetchConfig = {
+            ...this.FetchConfig,
+            method,
             headers: {
                 ...this.dataOperation[requestType].headers,
                 ...headers
-            }, method: 'GET'
+            },
+        };
+        if (!!params) FetchConfig.body = this.dataOperation[requestType].formatting(params);
+        return this.send({
+            url,
+            FetchConfig
         })
     }
 
+    // 封装请求
+    get({ url, params = {}, headers }) {
+        const key = !!!params ? url : `${url}?${qs.stringify(params)}`
+        if (this.cacheStorage) {
+            if (this.cacheStorage.getItem(key)) {
+                return Promise.resolve(this.cacheStorage.getItem(key))
+            } else {
+                return this.preSend({ url: key, headers, method: 'GET' }).then(data => {
+                    this.cacheStorage.setItem(key, data)
+                    return data
+                })
+            }
+        } else {
+            return this.preSend({ url: key, headers, method: 'GET' })
+        }
+
+    }
+
     post({ url, query = '', params = {}, headers }) {
-        const { requestType } = this.config
-        return this.send({
-            url: query ? `${url}?${qs.stringify(query)}` : url,
-            params: this.dataOperation[requestType].formatting(params),
-            headers: {
-                ...this.dataOperation[requestType].headers,
-                ...headers
-            }, method: 'POST'
-        })
+        return this.preSend({ url, params, headers, method: 'POST' })
     }
 }
 
