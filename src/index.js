@@ -7,15 +7,15 @@
  * @Description:
  */
 
-import Fetch from './util/fetch'
+import Fetch from './util/fetch';
 
-const fetch = new Fetch({ requestType: "FormData", cacheType: 'local' });
+const fetch = new Fetch({ requestType: "JSON", cacheType: 'local' });
 
 fetch.get({
     url: 'https://api.github.com/users/octocat',
-    // params: {
-    //     test: 1
-    // }
+    params: {
+        test: 1
+    }
 }).then(data => {
     console.log('data====>', data)
 }).catch(err => {

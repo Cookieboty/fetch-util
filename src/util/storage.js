@@ -8,7 +8,6 @@
  */
 
 class Storage {
-
     constructor(props) { // 根据类型跟缓存时间，初始化缓存方法
         const { type, time = 5000 } = props
         this.type = type

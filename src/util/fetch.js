@@ -10,6 +10,7 @@ import qs from 'qs'
 import Storage from './storage'
 
 class Fetch {
+
     constructor(config = {}) {
 
         const {
@@ -45,8 +46,7 @@ class Fetch {
         this.dataOperation = {
             JSON: {
                 headers: {
-                    'Accept': 'application/json', // 告诉服务器，我们能接受json格式的返回类型，
-                    'Content-Type': 'application/json', // 告诉服务器，我们提交的数据类型
+                    'Content-Type': 'application/json', // 告诉服务器，我们提交的数据类型为 json 格式
                 },
                 formatting(params) {
                     return JSON.stringify(params)
@@ -54,8 +54,7 @@ class Fetch {
             },
             FormData: {
                 headers: {
-                    'Accept': 'application/json', // 告诉服务器，我们能接受json格式的返回类型，
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded' // 告诉服务器，我们提交的数据类型为 FormData 格式
                 },
                 formatting(params) {
                     let _formData = new FormData();
@@ -113,8 +112,8 @@ class Fetch {
     }
 
     // 封装请求
-    get({ url, params = {}, headers }) {
-        const key = !!!params ? url : `${url}?${qs.stringify(params)}`
+    get({ url, query, headers }) {
+        const key = query ? `${url}?${qs.stringify(query)}` : url
         if (this.cacheStorage) {
             if (this.cacheStorage.getItem(key)) {
                 return Promise.resolve(this.cacheStorage.getItem(key))
@@ -127,11 +126,10 @@ class Fetch {
         } else {
             return this.preSend({ url: key, headers, method: 'GET' })
         }
-
     }
 
-    post({ url, query = '', params = {}, headers }) {
-        return this.preSend({ url, params, headers, method: 'POST' })
+    post({ url, query, params = {}, headers }) {
+        return this.preSend({ url: query ? `${url}?${qs.stringify(query)}` : url, params, headers, method: 'POST' })
     }
 }
 
