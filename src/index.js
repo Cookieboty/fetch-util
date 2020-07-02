@@ -2,23 +2,49 @@
  * @Author: Cookie
  * @Date: 2020-06-22 16:23:02
  * @LastEditors: Cookie
- * @LastEditTime: 2020-06-26 00:32:14
+ * @LastEditTime: 2020-07-02 19:17:33
  * @FilePath: /fetch-uitl/src/index.js
  * @Description:
  */
-
 import Fetch from './util/fetch';
 
 const fetch = new Fetch({ requestType: "JSON", cacheType: 'local' });
 
-fetch.get({
-    url: 'https://api.github.com/users/octocat',
-    params: {
-        test: 1
-    }
-}).then(data => {
-    console.log('data====>', data)
-}).catch(err => {
-    console.log('err====>', err)
-})
 
+
+const method = (type, url) => {
+    console.log(type)
+    switch (type) {
+        case 'GET': {
+            return (target, name, descriptor) => {
+                return {
+                    ...descriptor,
+                    value(params) {
+                        fetch.get({
+                            url,
+                            params
+                        }).then(data => {
+                            descriptor.value(data)
+                        }).catch(err => {
+                            console.log('err====>', err)
+                        })
+                    }
+                }
+            }
+        }
+        default: {
+            return (target, name, descriptor) => {
+            }
+        }
+    }
+}
+
+class Business {
+    @method('GET', 'https://api.github.com/users/octocat')
+    getOct(result) {
+        console.log('result==>', result)
+    }
+}
+
+const business = new Business()
+business.getOct()

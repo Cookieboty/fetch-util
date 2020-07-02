@@ -2,7 +2,7 @@
  * @Author: Cookie
  * @Date: 2020-05-12 15:47:47
  * @LastEditors: Cookie
- * @LastEditTime: 2020-06-22 18:49:38
+ * @LastEditTime: 2020-07-02 16:20:37
  * @Description: 
  */
 import resolve from 'rollup-plugin-node-resolve';
@@ -14,21 +14,28 @@ export default {
   input: 'src/index.js',
   output: {
     file: 'dist/bundle.js',
+    format: 'umd'
   },
   watch: {
     include: 'src/**/*'
   },
   plugins: [
-    resolve({
-      extensions: ['.js']
+    commonjs({
+      exclude: 'src/**',
     }),
-    commonjs(),
     babel({
       runtimeHelpers: true,
       babelrc: false,
       presets: [
         ['@babel/preset-env']
       ],
+      plugins: [
+        ["@babel/plugin-transform-runtime"],
+        ["@babel/plugin-proposal-decorators", { "legacy": true }],
+      ]
+    }),
+    resolve({
+      extensions: ['.js']
     }),
     uglify({
       compress: {
