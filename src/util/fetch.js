@@ -85,7 +85,7 @@ class Fetch {
             })
         })
         // 设置超时时间
-        const time = new Promise((reject) => {
+        const time = new Promise((resolve, reject) => {
             setTimeout(() => {
                 reject('time out')
             }, timeOut);

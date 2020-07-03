@@ -13,18 +13,17 @@ const fetch = new Fetch({ requestType: "JSON", cacheType: 'local' });
 
 
 const method = (type, url) => {
-    console.log(type)
     switch (type) {
         case 'GET': {
             return (target, name, descriptor) => {
                 return {
                     ...descriptor,
-                    value(params) {
+                    value(query) {
                         fetch.get({
                             url,
-                            params
+                            query
                         }).then(data => {
-                            descriptor.value(data)
+                            descriptor.value.apply({ result: data }, [...arguments])
                         }).catch(err => {
                             console.log('err====>', err)
                         })
@@ -40,11 +39,19 @@ const method = (type, url) => {
 }
 
 class Business {
+
     @method('GET', 'https://api.github.com/users/octocat')
-    getOct(result) {
-        console.log('result==>', result)
+    getOct(params, query) {
+        console.log(params, query)
+        console.log('result==>', this.result)
     }
 }
 
 const business = new Business()
-business.getOct()
+
+business.getOct({
+    test: 1
+}, {
+    test: 2
+}
+)
