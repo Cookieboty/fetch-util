@@ -10,7 +10,60 @@ import Fetch from './util/fetch';
 
 const fetch = new Fetch({ requestType: "JSON", cacheType: 'local' });
 
+function throttle(wait) {
+    let timeout;
+    return (target, name, descriptor) => {
+        return {
+            ...descriptor,
+            value(query) {
+                if (!timeout) {
+                    timeout = setTimeout(() => {
+                        timeout = null;
+                        descriptor.value.apply(this, [...arguments])
+                    }, wait)
+                }
+            }
+        }
+    }
+}
 
+function debounce(wait, immediate) {
+    let timer;
+    return (target, name, descriptor) => {
+        return {
+            ...descriptor,
+            value(query) {
+                if (timer) clearTimeout(timer);
+                if (immediate) {
+                    let callNow = !timer;
+                    timer = setTimeout(() => {
+                        timer = null;
+                    }, wait);
+                    if (callNow) descriptor.value.apply(this, [...arguments]);
+                } else {
+                    timer = setTimeout(() => {
+                        descriptor.value.apply(this, [...arguments])
+                    }, wait)
+                }
+            }
+        }
+    }
+}
+
+function consuming(target, name, descriptor) {
+    return {
+        ...descriptor,
+        value(query) {
+            try {
+                console.time('consuming')
+                console.log('发送埋点', query)
+                descriptor.value.apply(this, [...arguments])
+            } finally {
+                console.timeEnd('consuming')
+            }
+        }
+    }
+}
 
 const method = (type, url) => {
     switch (type) {
@@ -39,10 +92,11 @@ const method = (type, url) => {
 }
 
 class Business {
-
+    @throttle(3000)
+    @consuming
     @method('GET', 'https://api.github.com/users/octocat')
-    getOct(params, query) {
-        console.log(params, query)
+    getOct(params) {
+        console.log(params)
         console.log('result==>', this.result)
     }
 }
@@ -51,7 +105,20 @@ const business = new Business()
 
 business.getOct({
     test: 1
-}, {
-    test: 2
-}
-)
+})
+business.getOct({
+    test: 1
+})
+
+business.getOct({
+    test: 1
+})
+business.getOct({
+    test: 1
+})
+business.getOct({
+    test: 1
+})
+business.getOct({
+    test: 1
+})
