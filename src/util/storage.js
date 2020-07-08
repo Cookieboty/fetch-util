@@ -9,15 +9,56 @@
 
 class Storage {
     constructor(props) { // 根据类型跟缓存时间，初始化缓存方法
-        const { type, time = 5000 } = props
+        const { type, time = 5000, cacheSize = 2.5 } = props
         this.type = type
         this.time = time
+        this.cacheSize = cacheSize * 1024 * 1024
+        console.log(this.cacheSize)
+
         this.storageType = {
             local: 'localStorage',
             session: 'sessionStorage',
             cookie: 'cookie',
             indexDb: 'indexDb',
             nomal: 'nomal'
+        }
+        this.initEstimate()
+        console.log(this.getCacheSize(type))
+    }
+
+    getCacheSize(t = 'local') {
+        let storage = "";
+        if (t === 'local') {
+            if (!window.localStorage) {
+                console.log('浏览器不支持localStorage');
+            } else {
+                storage = window.localStorage;
+            }
+        } else {
+            if (!window.sessionStorage) {
+                console.log('浏览器不支持sessionStorage');
+            } else {
+                storage = window.sessionStorage;
+            }
+        }
+        if (storage !== "") {
+            let size = 0;
+            for (let item in storage) {
+                if (storage.hasOwnProperty(item)) {
+                    size += storage.getItem(item).length;
+                }
+            }
+            return size
+        }
+    }
+
+    initEstimate() {
+        if (navigator && navigator.storage) {
+            navigator.storage.estimate().then(estimate => {
+                this.usage = estimate.usage
+                this.quota = estimate.quota
+                console.log(this.usage, this.quota)
+            });
         }
     }
 
