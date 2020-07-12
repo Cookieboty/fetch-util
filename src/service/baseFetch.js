@@ -4,11 +4,11 @@ const prefix = 'https://api.github.com'
 
 const fetch = new Fetch({ requestType: "JSON", cacheType: 'local', BASE_URL: prefix });
 
-const get = (url, params) => {
+const get = (url, query) => {
   return new Promise((resolve, reject) => {
     fetch.get({
       url,
-      params
+      query
     }).then(response => {
       const { data, code, errMessage } = response
       if (code) {

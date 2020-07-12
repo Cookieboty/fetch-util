@@ -11,4 +11,4 @@ import userRestful from './service/userRestful'
 
 console.log(userRestful.user)
 
-userRestful.user.user.get({ test: 1 })
+userRestful.user.user.post({ test: 1 })
