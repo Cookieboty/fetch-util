@@ -11,6 +11,7 @@ const get = (url, query) => {
       query
     }).then(response => {
       const { data, code, errMessage } = response
+      resolve(response)
       if (code) {
         resolve(data)
       } else {

@@ -5,17 +5,28 @@ const prefix = 'users'
 
 const methods = ['get', 'post', 'put', 'delete']
 
-const userUrl = {
-  users: 'octocats',
-  user: 'octocat'
+const userObj = {
+  users: {
+    url: 'octocats',
+    get(data) { return data }
+  },
+  user: {
+    url: 'octocats',
+    post(data) { return data }
+  }
 }
 
 const user = {}
-Object.keys(userUrl).forEach(key => {
+Object.keys(userObj).forEach(key => {
   user[key] = {}
   methods.forEach(method => {
     user[key][method] = (params) => {
-      return baseFetch[method](`${prefix}/${userUrl[key]}`, params)
+      return new Promise((resolve) => {
+        baseFetch[method](`${prefix}/${userObj[key].url}`, params).then(data => {
+          if (userObj[key][method]) resolve(userObj[key][method](data))
+          resolve(data)
+        })
+      })
     }
   })
 })
