@@ -8,48 +8,99 @@
  */
 
 class Storage {
-    constructor(props) { // 根据类型跟缓存时间，初始化缓存方法
-        const { type, time = 5000, cacheSize = 2.5 } = props
+    constructor(props = {}) { // 根据类型跟缓存时间，初始化缓存方法
+        const { type = 'local', time = 5000, cacheSize = 2.5 } = props
         this.type = type
         this.time = time
         this.cacheSize = cacheSize * 1024 * 1024
-        console.log(this.cacheSize)
-
+        this.usage = 0
         this.storageType = {
             local: 'localStorage',
             session: 'sessionStorage',
             cookie: 'cookie',
             indexDb: 'indexDb',
-            nomal: 'nomal'
+            normal: 'normal'
         }
+
         this.initEstimate()
-        console.log(this.getCacheSize(type))
     }
 
-    getCacheSize(t = 'local') {
-        let storage = "";
-        if (t === 'local') {
-            if (!window.localStorage) {
-                console.log('浏览器不支持localStorage');
-            } else {
-                storage = window.localStorage;
-            }
-        } else {
-            if (!window.sessionStorage) {
-                console.log('浏览器不支持sessionStorage');
-            } else {
-                storage = window.sessionStorage;
-            }
-        }
+    getCacheSize() {
+        let storage = window[this.storageType[this.type]];
         if (storage !== "") {
             let size = 0;
             for (let item in storage) {
                 if (storage.hasOwnProperty(item)) {
-                    size += storage.getItem(item).length;
+                    size += this.getSize(storage.getItem(item))
                 }
             }
             return size
         }
+        return false
+    }
+
+    getCacheSort() {
+        let storage = window[this.storageType[this.type]];
+        if (storage !== "") {
+            let storageList = [];
+            for (let item in storage) {
+                if (storage.hasOwnProperty(item)) {
+                    storageList.push({
+                        key: item,
+                        value: storage.getItem(item)
+                    })
+                }
+            }
+            return storageList.sort((a, b) => {
+                return JSON.parse(a.value).time - JSON.parse(b.value).time
+            })
+        }
+        return false
+    }
+
+    judgeMemory(value) {
+        if (this.getSize(value) + this.usage > this.cacheSize) {
+            const storageList = this.getCacheSort()
+            for (let { key, value } of storageList) {
+                if (this.getSize(value) + this.usage < this.cacheSize) break
+                this.usage = this.usage - this.getSize(value)
+                this.baseRemoveItem(key)[this.type].apply(this)
+            }
+        } else {
+            this.usage = this.getSize(value) + this.usage
+        }
+    }
+
+    getSize(str, charset) {
+        let total = 0,
+            charCode,
+            i,
+            len;
+        charset = charset ? charset.toLowerCase() : '';
+        if (charset === 'utf-16' || charset === 'utf16') {
+            for (i = 0, len = str.length; i < len; i++) {
+                charCode = str.charCodeAt(i);
+                if (charCode <= 0xffff) {
+                    total += 2;
+                } else {
+                    total += 4;
+                }
+            }
+        } else {
+            for (i = 0, len = str.length; i < len; i++) {
+                charCode = str.charCodeAt(i);
+                if (charCode <= 0x007f) {
+                    total += 1;
+                } else if (charCode <= 0x07ff) {
+                    total += 2;
+                } else if (charCode <= 0xffff) {
+                    total += 3;
+                } else {
+                    total += 4;
+                }
+            }
+        }
+        return total;
     }
 
     initEstimate() {
@@ -59,14 +110,52 @@ class Storage {
                 this.quota = estimate.quota
                 console.log(this.usage, this.quota)
             });
+        } else {
+            this.usage = this.getCacheSize(this.type)
+        }
+        console.log('usage', this.usage)
+    }
+
+    baseSetItem(key, value) { // 接管原生新增方法
+        return {
+            local() { window[this.storageType[this.type]].setItem(key, value) },
+            session() { window[this.storageType[this.type]].setItem(key, value) },
+            cookie() { },
+            indexDb() { },
+            normal() {
+                if (!window.baseStorage) {
+                    window.baseStorage = {}
+                } else {
+                    window.baseStorage[key] = value
+                }
+            },
+        }
+    }
+
+    baseRemoveItem(key) { // 接管原生删除方法
+        return {
+            local() { window[this.storageType[this.type]].removeItem(key) },
+            session() { window[this.storageType[this.type]].removeItem(key) },
+            cookie() { },
+            indexDb() { },
+            normal() {
+                delete window.baseStorage[key]
+            },
         }
     }
 
     setItem(key, value) { // 代理原生缓存方法，添加缓存时间
-        window[this.storageType[this.type]].setItem(key, JSON.stringify({
-            value,
-            time: new Date().getTime()
-        }));
+        try {
+            if (!value) return
+            const reValue = JSON.stringify({
+                value,
+                time: new Date().getTime()
+            })
+            this.judgeMemory(reValue)
+            this.baseSetItem(key, reValue)[this.type].apply(this)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     getItem(key) { // 代理原生获取缓存方法，根据缓存时间，判断数据是否过期
@@ -74,7 +163,7 @@ class Storage {
             const { time, value } = JSON.parse(window[this.storageType[this.type]].getItem(key));
             const now = new Date().getTime()
             if (now > time + this.time) {
-                window[this.storageType[this.type]].removeItem(key);
+                this.baseRemoveItem(key)[this.type].apply(this)
                 return null
             } else {
                 return value
