@@ -53,7 +53,6 @@ function throttle(wait) {
   }
 }
 
-
 const method = (type, url) => {
   switch (type) {
     case 'GET': {

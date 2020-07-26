@@ -9,7 +9,7 @@ const getUser = async (params) => {
       params
     })
     return data
-  }
+  } finally { }
 }
 
 const setUser = (params) => {
@@ -19,9 +19,8 @@ const setUser = (params) => {
       params
     })
     return data
-  }
+  } finally { }
 }
-
 export {
   getUser,
   setUser

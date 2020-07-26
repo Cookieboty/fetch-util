@@ -10,7 +10,6 @@ import qs from 'qs'
 import Storage from './storage'
 
 class Fetch {
-
     constructor(config = {}) {
         const {
             cache = 'no-cache', // * default, no-cache, reload, force-cache, only-if-cached

@@ -1,8 +1,11 @@
 import Fetch from '../util/fetch';
+import RequestMiddle from '../util/RequestMiddle';
 
 const prefix = 'https://api.github.com'
 
 const fetch = new Fetch({ requestType: "JSON", cacheType: 'local', BASE_URL: prefix });
+
+console.log(RequestMiddle)
 
 const get = (url, query) => {
   return new Promise((resolve, reject) => {
